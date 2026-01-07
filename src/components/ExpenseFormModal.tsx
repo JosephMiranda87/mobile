@@ -14,43 +14,50 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import { useMemo, useState } from "react";
-import { CategoryId, useExpenses } from "../state/expenses";
+import { CategoryId, money, useFinance } from "../state/finance";
 
-type Props = {
+export default function ExpenseFormModal({
+  isOpen,
+  onDidDismiss,
+}: {
   isOpen: boolean;
   onDidDismiss: () => void;
-};
-
-export default function ExpenseFormModal({ isOpen, onDidDismiss }: Props) {
-  const { categories, addExpense } = useExpenses();
+}) {
+  const { categories, accounts, addExpense } = useFinance();
 
   const todayISO = useMemo(() => new Date().toISOString(), []);
-  const [amount, setAmount] = useState<string>("");
+  const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<CategoryId>("food");
+  const [accountId, setAccountId] = useState<string>(accounts[0]?.id ?? "");
   const [date, setDate] = useState<string>(todayISO);
-  const [note, setNote] = useState<string>("");
+  const [note, setNote] = useState("");
 
-  function reset() {
-    setAmount("");
-    setCategoryId("food");
-    setDate(todayISO);
-    setNote("");
-  }
+  // si cambian las cuentas, asegúrate de tener una seleccionada
+  useMemo(() => {
+    if (!accountId && accounts.length > 0) setAccountId(accounts[0].id);
+  }, [accounts, accountId]);
 
   function save() {
     const n = Number(amount);
     if (!Number.isFinite(n) || n <= 0) return;
+    if (!accountId) return;
 
     addExpense({
       amount: n,
       categoryId,
+      accountId,
       date,
       note: note.trim() ? note.trim() : undefined,
     });
 
-    reset();
+    setAmount("");
+    setCategoryId("food");
+    setDate(todayISO);
+    setNote("");
     onDidDismiss();
   }
+
+  const selectedAcc = accounts.find((a) => a.id === accountId);
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDidDismiss}>
@@ -63,12 +70,18 @@ export default function ExpenseFormModal({ isOpen, onDidDismiss }: Props) {
       <IonContent className="ion-padding">
         <IonItem>
           <IonLabel position="stacked">Monto</IonLabel>
-          <IonInput
-            inputMode="decimal"
-            value={amount}
-            placeholder="Ej: 3.50"
-            onIonInput={(e) => setAmount(String(e.detail.value ?? ""))}
-          />
+          <IonInput inputMode="decimal" value={amount} placeholder="Ej: 3.50" onIonInput={(e) => setAmount(String(e.detail.value ?? ""))} />
+        </IonItem>
+
+        <IonItem>
+          <IonLabel position="stacked">Cuenta</IonLabel>
+          <IonSelect value={accountId} onIonChange={(e) => setAccountId(e.detail.value)}>
+            {accounts.map((a) => (
+              <IonSelectOption key={a.id} value={a.id}>
+                {a.name} ({money(a.balance)})
+              </IonSelectOption>
+            ))}
+          </IonSelect>
         </IonItem>
 
         <IonItem>
@@ -84,27 +97,25 @@ export default function ExpenseFormModal({ isOpen, onDidDismiss }: Props) {
 
         <IonItem>
           <IonLabel position="stacked">Fecha</IonLabel>
-          <IonDatetime
-            presentation="date"
-            value={date}
-            onIonChange={(e) => setDate(String(e.detail.value))}
-          />
+          <IonDatetime presentation="date" value={date} onIonChange={(e) => setDate(String(e.detail.value))} />
         </IonItem>
 
         <IonItem>
           <IonLabel position="stacked">Nota (opcional)</IonLabel>
-          <IonInput
-            value={note}
-            placeholder="Ej: desayuno, taxi, etc."
-            onIonInput={(e) => setNote(String(e.detail.value ?? ""))}
-          />
+          <IonInput value={note} placeholder="Ej: supermercado, taxi..." onIonInput={(e) => setNote(String(e.detail.value ?? ""))} />
         </IonItem>
+
+        {selectedAcc && (
+          <p style={{ marginTop: 12, opacity: 0.75 }}>
+            Saldo actual de la cuenta: <b>{money(selectedAcc.balance)}</b>
+          </p>
+        )}
       </IonContent>
 
       <IonFooter>
         <IonToolbar>
           <IonButton expand="block" onClick={save}>
-            Guardar
+            Guardar gasto
           </IonButton>
           <IonButton expand="block" fill="clear" onClick={onDidDismiss}>
             Cancelar

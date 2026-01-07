@@ -1,15 +1,15 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import { ExpensesProvider } from "./state/expenses";
+import { FinanceProvider } from "./state/finance";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
 
 root.render(
   <React.StrictMode>
-    <ExpensesProvider>
+    <FinanceProvider>
       <App />
-    </ExpensesProvider>
+    </FinanceProvider>
   </React.StrictMode>
 );

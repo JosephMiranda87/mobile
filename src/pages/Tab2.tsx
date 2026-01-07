@@ -1,153 +1,268 @@
 import {
   IonCard,
   IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
+  IonIcon,
+  IonItem,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
+  IonLabel,
+  IonList,
   IonPage,
+  IonSegment,
+  IonSegmentButton,
+  IonSelect,
+  IonSelectOption,
+  IonText,
   IonTitle,
   IonToolbar,
-  IonText,
+  IonButton,
+  IonModal,
+  IonDatetime,
 } from "@ionic/react";
-import { useMemo } from "react";
-import { Doughnut } from "react-chartjs-2";
-import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
-import { monthKey, useExpenses } from "../state/expenses";
+import { add, trash, chevronBackOutline, chevronForwardOutline, calendarOutline } from "ionicons/icons";
+import { useMemo, useState } from "react";
+import ExpenseFormModal from "../components/ExpenseFormModal";
+import {
+  endOfMonth,
+  endOfWeek,
+  inPeriod,
+  money,
+  Period,
+  startOfMonth,
+  startOfWeek,
+  useFinance,
+} from "../state/finance";
 import "./Tab2.css";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+type GroupBy = "date" | "category";
 
-function money(n: number) {
-  return new Intl.NumberFormat("es-EC", { style: "currency", currency: "USD" }).format(n);
+function formatMonthLabel(d: Date) {
+  return d.toLocaleDateString("es-EC", { month: "long", year: "numeric" });
+}
+function formatDayLabel(d: Date) {
+  return d.toLocaleDateString("es-EC", { weekday: "long", day: "2-digit", month: "long" });
+}
+function formatWeekLabel(d: Date) {
+  const s = startOfWeek(d);
+  const e = endOfWeek(d);
+  const sTxt = s.toLocaleDateString("es-EC", { day: "2-digit", month: "short" });
+  const eTxt = e.toLocaleDateString("es-EC", { day: "2-digit", month: "short" });
+  return `${sTxt} – ${eTxt}`;
 }
 
 const Tab2: React.FC = () => {
-  const { expenses, categories } = useExpenses();
+  const { expenses, categories, accounts, deleteExpense } = useFinance();
+  const [open, setOpen] = useState(false);
 
-  const currentMonth = useMemo(() => monthKey(new Date()), []);
+  const [period, setPeriod] = useState<Period>("day");
+  const [groupBy, setGroupBy] = useState<GroupBy>("date");
 
-  const monthExpenses = useMemo(() => {
-    return expenses.filter((e) => monthKey(new Date(e.date)) === currentMonth);
-  }, [expenses, currentMonth]);
+  // ✅ Fecha base elegible por el usuario
+  const [baseISO, setBaseISO] = useState<string>(new Date().toISOString());
+  const baseDate = useMemo(() => new Date(baseISO), [baseISO]);
 
-  const total = useMemo(() => monthExpenses.reduce((a, e) => a + e.amount, 0), [monthExpenses]);
+  // Modal para escoger fecha base
+  const [dateModal, setDateModal] = useState(false);
 
-  const byCat = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const e of monthExpenses) map.set(e.categoryId, (map.get(e.categoryId) ?? 0) + e.amount);
-
-    const rows = categories
-      .map((c) => ({ id: c.id, name: c.name, value: map.get(c.id) ?? 0 }))
-      .filter((x) => x.value > 0)
-      .sort((a, b) => b.value - a.value);
-
-    return rows;
-  }, [monthExpenses, categories]);
-
-  const chartData = useMemo(
-    () => ({
-      labels: byCat.map((x) => x.name),
-      datasets: [
-        {
-          data: byCat.map((x) => x.value),
-        },
-      ],
-    }),
-    [byCat]
+  const filtered = useMemo(
+    () => expenses.filter((e) => inPeriod(e.date, period, baseDate)),
+    [expenses, period, baseDate]
   );
+
+  const total = useMemo(() => filtered.reduce((a, x) => a + x.amount, 0), [filtered]);
+
+  const catName = (id: string) => categories.find((c) => c.id === id)?.name ?? "—";
+  const accName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "Cuenta";
+
+  // ✅ etiqueta del período seleccionado (día/semana/mes)
+  const periodLabel = useMemo(() => {
+    if (period === "day") return formatDayLabel(baseDate);
+    if (period === "week") return `Semana: ${formatWeekLabel(baseDate)}`;
+    return `Mes: ${formatMonthLabel(baseDate)}`;
+  }, [period, baseDate]);
+
+  // ✅ botones anterior/siguiente según período
+  function movePeriod(step: -1 | 1) {
+    const d = new Date(baseDate);
+
+    if (period === "day") {
+      d.setDate(d.getDate() + step);
+    } else if (period === "week") {
+      d.setDate(d.getDate() + step * 7);
+    } else {
+      d.setMonth(d.getMonth() + step);
+    }
+    setBaseISO(d.toISOString());
+  }
+
+  // ✅ agrupación inteligente: semana/mes agrupa por día si eliges "fecha"
+  const grouped = useMemo(() => {
+    if (filtered.length === 0) return [];
+
+    const map = new Map<string, typeof filtered>();
+
+    for (const e of filtered) {
+      let key: string;
+
+      if (groupBy === "category") {
+        key = catName(e.categoryId);
+      } else {
+        // groupBy === "date"
+        // Para "día": mostramos todos en un solo grupo con la fecha del día
+        // Para "semana" y "mes": agrupamos por cada día
+        const dt = new Date(e.date);
+        key =
+          period === "day"
+            ? dt.toLocaleDateString("es-EC", { weekday: "long", day: "2-digit", month: "long" })
+            : dt.toLocaleDateString("es-EC", { day: "2-digit", month: "long" });
+      }
+
+      map.set(key, [...(map.get(key) ?? []), e]);
+    }
+
+    // ordenar grupos por fecha si se agrupa por date
+    const entries = [...map.entries()];
+    if (groupBy === "date") {
+      // intentamos ordenar por una fecha válida (no perfecto pero funciona bien)
+      entries.sort((a, b) => a[0].localeCompare(b[0], "es"));
+    } else {
+      entries.sort((a, b) => a[0].localeCompare(b[0], "es"));
+    }
+
+    return entries;
+  }, [filtered, groupBy, categories, accounts, period]);
 
   return (
     <IonPage>
-      <IonHeader className="sum-header" translucent>
-        <IonToolbar className="sum-toolbar">
-          <IonTitle>Resumen</IonTitle>
+      <IonHeader className="ops-header" translucent>
+        <IonToolbar className="ops-toolbar">
+          <IonTitle>Gastos</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen>
-        {/* HERO */}
-        <div className="sum-hero">
+        <div className="ops-hero">
           <IonText>
-            <h2 style={{ margin: 0, fontWeight: 900 }}>Resumen del mes</h2>
+            <h2 style={{ margin: 0, fontWeight: 900 }}>Total: {money(total)}</h2>
           </IonText>
-          <IonText color="medium">
-            <p style={{ marginTop: 6, marginBottom: 0 }}>
-              Mes: <b>{currentMonth}</b> • Categorías con mayor gasto
-            </p>
-          </IonText>
+
+          {/* ✅ Selector de período */}
+          <div className="ops-controls">
+            <IonSegment value={period} onIonChange={(e) => setPeriod(e.detail.value as Period)}>
+              <IonSegmentButton value="day">
+                <IonLabel>Día</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="week">
+                <IonLabel>Semana</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="month">
+                <IonLabel>Mes</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+
+            {/* ✅ Navegación y selector de fecha */}
+            <div className="ops-range-row">
+              <IonButton fill="clear" onClick={() => movePeriod(-1)}>
+                <IonIcon icon={chevronBackOutline} />
+              </IonButton>
+
+              <IonButton className="ops-range-btn" onClick={() => setDateModal(true)}>
+                <IonIcon icon={calendarOutline} style={{ marginRight: 8 }} />
+                {periodLabel}
+              </IonButton>
+
+              <IonButton fill="clear" onClick={() => movePeriod(1)}>
+                <IonIcon icon={chevronForwardOutline} />
+              </IonButton>
+            </div>
+
+            {/* ✅ Agrupar */}
+            <IonSelect value={groupBy} onIonChange={(e) => setGroupBy(e.detail.value)} interface="popover">
+              <IonSelectOption value="date">Agrupar por fecha</IonSelectOption>
+              <IonSelectOption value="category">Agrupar por categoría</IonSelectOption>
+            </IonSelect>
+          </div>
         </div>
 
-        {/* TOTAL */}
-        <div className="ion-padding">
-          <IonCard className="sum-card-gradient">
-            <IonCardHeader>
-              <IonCardTitle style={{ color: "white" }}>Total gastado</IonCardTitle>
-            </IonCardHeader>
+        <div className="ion-padding" style={{ paddingBottom: 90 }}>
+          <IonCard className="ops-card">
             <IonCardContent>
-              <div className="sum-total">{money(total)}</div>
-              <IonText color="light">
-                <p style={{ marginTop: 8, opacity: 0.9 }}>
-                  {byCat.length > 0
-                    ? `Top: ${byCat[0].name} (${money(byCat[0].value)})`
-                    : "Registra gastos para ver tu resumen."}
-                </p>
-              </IonText>
+              <IonList lines="none">
+                {filtered.length === 0 ? (
+                  <IonItem>
+                    <IonLabel>No hay gastos en este período.</IonLabel>
+                  </IonItem>
+                ) : (
+                  grouped.map(([key, items]) => (
+                    <div key={key} style={{ marginBottom: 14 }}>
+                      <IonText color="medium">
+                        <p style={{ margin: "6px 0 10px 0" }}>
+                          <b>{key}</b>
+                        </p>
+                      </IonText>
+
+                      {items.map((e) => (
+                        <IonItemSliding key={e.id}>
+                          <IonItem className="ops-item">
+                            <IonLabel>
+                              <h3 style={{ marginBottom: 6 }}>{catName(e.categoryId)}</h3>
+                              <p style={{ margin: 0, opacity: 0.75 }}>
+                                {accName(e.accountId)}
+                                {e.note ? ` • ${e.note}` : ""}
+                              </p>
+                            </IonLabel>
+                            <IonLabel slot="end" className="ops-amount">
+                              {money(e.amount)}
+                            </IonLabel>
+                          </IonItem>
+
+                          <IonItemOptions side="end">
+                            <IonItemOption color="danger" onClick={() => deleteExpense(e.id)}>
+                              <IonIcon slot="icon-only" icon={trash} />
+                            </IonItemOption>
+                          </IonItemOptions>
+                        </IonItemSliding>
+                      ))}
+                    </div>
+                  ))
+                )}
+              </IonList>
             </IonCardContent>
           </IonCard>
         </div>
 
-        {/* GRAFICO */}
-        <div className="ion-padding" style={{ paddingTop: 0 }}>
-          <IonCard className="sum-card">
-            <IonCardHeader>
-              <IonCardTitle>Gasto por categoría</IonCardTitle>
-            </IonCardHeader>
-            <IonCardContent>
-              {byCat.length === 0 ? (
-                <IonText color="medium">
-                  <p style={{ margin: 0 }}>No hay datos para graficar.</p>
-                </IonText>
-              ) : (
-                <Doughnut data={chartData} />
-              )}
-            </IonCardContent>
-          </IonCard>
-        </div>
+        <IonFab vertical="bottom" horizontal="end" slot="fixed">
+          <IonFabButton onClick={() => setOpen(true)}>
+            <IonIcon icon={add} />
+          </IonFabButton>
+        </IonFab>
 
-        {/* LISTA RESUMEN */}
-        <div className="ion-padding" style={{ paddingTop: 0, paddingBottom: 24 }}>
-          <IonCard className="sum-card">
-            <IonCardHeader>
-              <IonCardTitle>Detalle por categoría</IonCardTitle>
-            </IonCardHeader>
-            <IonCardContent>
-              {byCat.length === 0 ? (
-                <IonText color="medium">
-                  <p style={{ margin: 0 }}>Aún no hay categorías con gasto.</p>
-                </IonText>
-              ) : (
-                <div className="sum-list">
-                  {byCat.map((c) => {
-                    const pct = total > 0 ? Math.round((c.value / total) * 100) : 0;
-                    return (
-                      <div key={c.id} className="sum-row">
-                        <div className="sum-row-left">
-                          <div className="sum-dot" />
-                          <div>
-                            <div className="sum-name">{c.name}</div>
-                            <div className="sum-meta">{pct}% del total</div>
-                          </div>
-                        </div>
-                        <div className="sum-value">{money(c.value)}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </IonCardContent>
-          </IonCard>
-        </div>
+        <ExpenseFormModal isOpen={open} onDidDismiss={() => setOpen(false)} />
+
+        {/* ✅ Modal selector de fecha base */}
+        <IonModal isOpen={dateModal} onDidDismiss={() => setDateModal(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>Elegir fecha</IonTitle>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            <IonDatetime
+              presentation="date"
+              value={baseISO}
+              onIonChange={(e) => setBaseISO(String(e.detail.value))}
+            />
+            <div style={{ height: 12 }} />
+            <IonButton expand="block" onClick={() => setDateModal(false)}>
+              Listo
+            </IonButton>
+          </IonContent>
+        </IonModal>
       </IonContent>
     </IonPage>
   );
