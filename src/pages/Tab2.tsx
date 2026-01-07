@@ -259,6 +259,7 @@ const Tab2: React.FC = () => {
             />
             <div style={{ height: 12 }} />
             <IonButton expand="block" onClick={() => setDateModal(false)}>
+              
               Listo
             </IonButton>
           </IonContent>
