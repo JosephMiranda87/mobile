@@ -78,7 +78,7 @@ const App: React.FC = () => (
 
           <IonTabButton tab="tab3" href="/tab3">
             <IonIcon aria-hidden="true" icon={walletOutline} />
-            <IonLabel>Presupuesto</IonLabel>
+            <IonLabel>Análisis</IonLabel>
           </IonTabButton>
         </IonTabBar>
 

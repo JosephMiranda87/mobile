@@ -112,9 +112,6 @@ const Tab2: React.FC = () => {
       if (groupBy === "category") {
         key = catName(e.categoryId);
       } else {
-        // groupBy === "date"
-        // Para "día": mostramos todos en un solo grupo con la fecha del día
-        // Para "semana" y "mes": agrupamos por cada día
         const dt = new Date(e.date);
         key =
           period === "day"
@@ -128,7 +125,6 @@ const Tab2: React.FC = () => {
     // ordenar grupos por fecha si se agrupa por date
     const entries = [...map.entries()];
     if (groupBy === "date") {
-      // intentamos ordenar por una fecha válida (no perfecto pero funciona bien)
       entries.sort((a, b) => a[0].localeCompare(b[0], "es"));
     } else {
       entries.sort((a, b) => a[0].localeCompare(b[0], "es"));

@@ -16,7 +16,32 @@
   gap: 10px;
 }
 
+.ana-range-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ana-range-btn {
+  flex: 1;
+  --border-radius: 14px;
+  font-weight: 800;
+}
+
 .ana-card {
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.ana-compare {
+  display: grid;
+  gap: 10px;
+}
+
+.ana-budget-input {
+  margin-top: 6px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.04);
 }
