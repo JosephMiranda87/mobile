@@ -29,11 +29,9 @@ export default function AccountFormModal({
   const [balance, setBalance] = useState("");
 
   const bankName = useMemo(() => banks.find((b) => b.id === bankId)?.name ?? "Banco", [banks, bankId]);
-
   function save() {
     const n = Number(balance);
-    if (!Number.isFinite(n)) return;
-
+    if (!Number.isFinite(n) || n <= 0) return;
     addAccount({
       bankId,
       name: name.trim() ? name.trim() : bankName,

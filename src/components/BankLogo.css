@@ -1,0 +1,25 @@
+.bank-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: white;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
+}
+
+.bank-logo ion-icon {
+  font-size: 20px;
+}
+
+/* Colores por banco */
+.bank-pichincha { background: #f59e0b; }     /* amarillo/ámbar */
+.bank-guayaquil { background: #3b82f6; }     /* azul */
+.bank-produbanco { background: #10b981; }    /* verde */
+.bank-pacifico { background: #06b6d4; }      /* cian */
+.bank-bolivariano { background: #8b5cf6; }   /* morado */
+.bank-internacional { background: #ef4444; } /* rojo */
+.bank-austro { background: #14b8a6; }        /* teal */
+.bank-coop { background: #a3e635; color: #0f172a; } /* lima */
+.bank-cash { background: #64748b; }          /* gris */
+.bank-other { background: #f43f5e; }         /* rosa */

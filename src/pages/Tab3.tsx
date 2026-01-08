@@ -24,6 +24,7 @@ import {
 } from "chart.js";
 import { inPeriod, money, Period, useFinance } from "../state/finance";
 import "./Tab3.css";
+import { CATEGORY_COLORS } from "../theme/chartColors";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -52,13 +53,24 @@ const Tab3: React.FC = () => {
     return { labels, data };
   }, [filtered, categories]);
 
-  const chartData = useMemo(
-    () => ({
+  const chartData = useMemo(() => {
+    const colors = categories.map((c) => CATEGORY_COLORS[c.id]);
+
+    return {
       labels: byCat.labels,
-      datasets: [{ label: "Gasto (USD)", data: byCat.data }],
-    }),
-    [byCat]
-  );
+      datasets: [
+        {
+          label: "Gasto (USD)",
+          data: byCat.data,
+          backgroundColor: colors,
+          borderColor: "#ffffff",
+          borderWidth: 1,
+          borderRadius: 10,
+        },
+      ],
+    };
+  }, [byCat, categories]);
+
 
   return (
     <IonPage>

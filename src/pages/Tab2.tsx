@@ -62,7 +62,7 @@ const Tab2: React.FC = () => {
   const [period, setPeriod] = useState<Period>("day");
   const [groupBy, setGroupBy] = useState<GroupBy>("date");
 
-  // ✅ Fecha base elegible por el usuario
+  // Fecha base elegible por el usuario
   const [baseISO, setBaseISO] = useState<string>(new Date().toISOString());
   const baseDate = useMemo(() => new Date(baseISO), [baseISO]);
 
@@ -79,14 +79,14 @@ const Tab2: React.FC = () => {
   const catName = (id: string) => categories.find((c) => c.id === id)?.name ?? "—";
   const accName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "Cuenta";
 
-  // ✅ etiqueta del período seleccionado (día/semana/mes)
+  // etiqueta del período seleccionado (día/semana/mes)
   const periodLabel = useMemo(() => {
     if (period === "day") return formatDayLabel(baseDate);
     if (period === "week") return `Semana: ${formatWeekLabel(baseDate)}`;
     return `Mes: ${formatMonthLabel(baseDate)}`;
   }, [period, baseDate]);
 
-  // ✅ botones anterior/siguiente según período
+  // botones anterior/siguiente según período
   function movePeriod(step: -1 | 1) {
     const d = new Date(baseDate);
 
@@ -100,7 +100,7 @@ const Tab2: React.FC = () => {
     setBaseISO(d.toISOString());
   }
 
-  // ✅ agrupación inteligente: semana/mes agrupa por día si eliges "fecha"
+  // agrupación inteligente: semana/mes agrupa por día si eliges "fecha"
   const grouped = useMemo(() => {
     if (filtered.length === 0) return [];
 
@@ -151,7 +151,7 @@ const Tab2: React.FC = () => {
             <h2 style={{ margin: 0, fontWeight: 900 }}>Total: {money(total)}</h2>
           </IonText>
 
-          {/* ✅ Selector de período */}
+          {/* Selector de período */}
           <div className="ops-controls">
             <IonSegment value={period} onIonChange={(e) => setPeriod(e.detail.value as Period)}>
               <IonSegmentButton value="day">
@@ -165,7 +165,7 @@ const Tab2: React.FC = () => {
               </IonSegmentButton>
             </IonSegment>
 
-            {/* ✅ Navegación y selector de fecha */}
+            {/* Navegación y selector de fecha */}
             <div className="ops-range-row">
               <IonButton fill="clear" onClick={() => movePeriod(-1)}>
                 <IonIcon icon={chevronBackOutline} />
@@ -181,7 +181,7 @@ const Tab2: React.FC = () => {
               </IonButton>
             </div>
 
-            {/* ✅ Agrupar */}
+            {/* Agrupar */}
             <IonSelect value={groupBy} onIonChange={(e) => setGroupBy(e.detail.value)} interface="popover">
               <IonSelectOption value="date">Agrupar por fecha</IonSelectOption>
               <IonSelectOption value="category">Agrupar por categoría</IonSelectOption>
@@ -244,7 +244,7 @@ const Tab2: React.FC = () => {
 
         <ExpenseFormModal isOpen={open} onDidDismiss={() => setOpen(false)} />
 
-        {/* ✅ Modal selector de fecha base */}
+        {/* Modal selector de fecha base */}
         <IonModal isOpen={dateModal} onDidDismiss={() => setDateModal(false)}>
           <IonHeader>
             <IonToolbar>

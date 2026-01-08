@@ -26,6 +26,8 @@ import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import AccountFormModal from "../components/AccountFormModal";
 import { money, useFinance } from "../state/finance";
 import "./Tab1.css";
+import { BANK_COLORS } from "../theme/chartColors";
+import BankLogo from "../components/BankLogo";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -35,13 +37,24 @@ const Tab1: React.FC = () => {
 
   const totalBalance = useMemo(() => accounts.reduce((a, x) => a + x.balance, 0), [accounts]);
 
-  const chartData = useMemo(
-    () => ({
-      labels: accounts.map((a) => a.name),
-      datasets: [{ data: accounts.map((a) => Math.max(a.balance, 0)) }],
-    }),
-    [accounts]
-  );
+  const chartData = useMemo(() => {
+    const labels = accounts.map((a) => a.name);
+    const data = accounts.map((a) => Math.max(a.balance, 0));
+    const colors = accounts.map((a) => BANK_COLORS[a.bankId]);
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: colors,
+          borderColor: "#ffffff",
+          borderWidth: 2,
+          hoverOffset: 6,
+        },
+      ],
+    };
+  }, [accounts]);
 
   return (
     <IonPage>
@@ -91,19 +104,12 @@ const Tab1: React.FC = () => {
                   <IonItem key={a.id} className="dash-item">
                     <IonLabel>
                       <h3 style={{ marginBottom: 6 }}>{a.name}</h3>
-                      <p style={{ margin: 0, opacity: 0.75 }}>Saldo: <b>{money(a.balance)}</b></p>
+                      <p style={{ margin: 0, opacity: 0.75 }}>
+                        Saldo: <b>{money(a.balance)}</b>
+                      </p>
                     </IonLabel>
-
-                    {/* editar saldo rápido */}
-                    <div style={{ width: 140 }}>
-                      <IonInput
-                        inputMode="decimal"
-                        value={String(a.balance)}
-                        onIonBlur={(e) => {
-                          const v = Number((e.target as HTMLIonInputElement).value);
-                          if (Number.isFinite(v)) updateAccountBalance(a.id, v);
-                        }}
-                      />
+                    <div slot="end">
+                      <BankLogo bankId={a.bankId} />
                     </div>
                   </IonItem>
                 ))}
