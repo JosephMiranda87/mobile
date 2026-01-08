@@ -32,7 +32,6 @@ export default function ExpenseFormModal({
   const [date, setDate] = useState<string>(todayISO);
   const [note, setNote] = useState("");
 
-  // si cambian las cuentas, asegúrate de tener una seleccionada
   useMemo(() => {
     if (!accountId && accounts.length > 0) setAccountId(accounts[0].id);
   }, [accounts, accountId]);

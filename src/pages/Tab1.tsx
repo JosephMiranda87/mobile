@@ -28,14 +28,21 @@ import { money, useFinance } from "../state/finance";
 import "./Tab1.css";
 import { BANK_COLORS } from "../theme/chartColors";
 import BankLogo from "../components/BankLogo";
+import { pencil, trash } from "ionicons/icons";
+import { IonItemSliding, IonItemOptions, IonItemOption } from "@ionic/react";
+import AccountEditModal from "../components/AccountEditModal";
+import type { Account } from "../state/finance";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Tab1: React.FC = () => {
-  const { accounts, updateAccountBalance } = useFinance();
+  const { accounts, deleteAccount, updateAccount } = useFinance();
   const [open, setOpen] = useState(false);
-
   const totalBalance = useMemo(() => accounts.reduce((a, x) => a + x.balance, 0), [accounts]);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [selected, setSelected] = useState<Account | null>(null);
+
 
   const chartData = useMemo(() => {
     const labels = accounts.map((a) => a.name);
@@ -101,17 +108,37 @@ const Tab1: React.FC = () => {
             <IonCardContent>
               <IonList lines="none">
                 {accounts.map((a) => (
-                  <IonItem key={a.id} className="dash-item">
-                    <IonLabel>
-                      <h3 style={{ marginBottom: 6 }}>{a.name}</h3>
-                      <p style={{ margin: 0, opacity: 0.75 }}>
-                        Saldo: <b>{money(a.balance)}</b>
-                      </p>
-                    </IonLabel>
-                    <div slot="end">
-                      <BankLogo bankId={a.bankId} />
-                    </div>
-                  </IonItem>
+                  <IonItemSliding key={a.id}>
+                    <IonItem className="dash-item" button onClick={() => { setSelected(a); setEditOpen(true); }}>
+                      <IonLabel>
+                        <h3 style={{ marginBottom: 6 }}>{a.name}</h3>
+                        <p style={{ margin: 0, opacity: 0.75 }}>
+                          Saldo: <b>{money(a.balance)}</b>
+                        </p>
+                      </IonLabel>
+
+                      <div slot="end">
+                        <BankLogo bankId={a.bankId} />
+                      </div>
+                    </IonItem>
+
+                    <IonItemOptions side="end">
+                      <IonItemOption
+                        color="primary"
+                        onClick={() => {
+                          setSelected(a);
+                          setEditOpen(true);
+                        }}
+                      >
+                        <IonIcon slot="icon-only" icon={pencil} />
+                      </IonItemOption>
+
+                      <IonItemOption color="danger" onClick={() => deleteAccount(a.id)}>
+                        <IonIcon slot="icon-only" icon={trash} />
+                      </IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
+
                 ))}
               </IonList>
 
@@ -129,8 +156,15 @@ const Tab1: React.FC = () => {
         </IonFab>
 
         <AccountFormModal isOpen={open} onDidDismiss={() => setOpen(false)} />
+        <AccountEditModal
+          isOpen={editOpen}
+          onDidDismiss={() => setEditOpen(false)}
+          account={selected}
+        />
+
       </IonContent>
     </IonPage>
+
   );
 };
 

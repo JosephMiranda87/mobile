@@ -9,7 +9,6 @@ import type { BankId } from "../state/finance";
 import "./BankLogo.css";
 
 export default function BankLogo({ bankId }: { bankId: BankId }) {
-  // Si luego quieres logos reales (PNG/SVG), aquí cambias el render.
   const icon =
     bankId === "cash"
       ? cashOutline

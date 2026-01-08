@@ -74,6 +74,7 @@ type FinanceState = {
   addAccount: (a: Omit<Account, "id">) => void;
   updateAccountBalance: (accountId: string, balance: number) => void;
   deleteAccount: (accountId: string) => void;
+  updateAccount: (accountId: string, patch: { bankId: BankId; name: string; balance: number }) => void;
 
   addExpense: (e: Omit<Expense, "id">) => void;
   deleteExpense: (expenseId: string) => void;
@@ -119,6 +120,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setAccounts((prev) => prev.map((x) => (x.id === accountId ? { ...x, balance } : x)));
   };
 
+  const updateAccount: FinanceState["updateAccount"] = (accountId, patch) => {
+    setAccounts((prev) =>
+      prev.map((a) => (a.id === accountId ? { ...a, ...patch } : a))
+    );
+  };
+
+
   const deleteAccount: FinanceState["deleteAccount"] = (accountId) => {
     setAccounts((prev) => prev.filter((x) => x.id !== accountId));
   };
@@ -148,6 +156,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+
+
   const value = useMemo(
     () => ({
       banks: BANKS,
@@ -156,6 +166,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       expenses,
       addAccount,
       updateAccountBalance,
+      updateAccount,
       deleteAccount,
       addExpense,
       deleteExpense,

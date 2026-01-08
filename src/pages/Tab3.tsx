@@ -1,4 +1,3 @@
-// src/pages/Tab3.tsx
 import {
   IonButton,
   IonCard,
@@ -49,7 +48,7 @@ import "./Tab3.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-type BudgetScope = "all" | string; // "all" o accountId
+type BudgetScope = "all" | string; 
 
 function hexToRgba(hex: string, alpha: number) {
   const h = hex.replace("#", "");
@@ -365,7 +364,7 @@ const Tab3: React.FC = () => {
           </div>
         </div>
 
-        {/* ✅ GRAFICO */}
+        {/* GRAFICO */}
         <div className="ion-padding" style={{ paddingBottom: 24 }}>
           <IonCard className="ana-card">
             <IonCardContent>
@@ -384,7 +383,7 @@ const Tab3: React.FC = () => {
           </IonCard>
         </div>
 
-        {/* ✅ Modal selector de fecha */}
+        {/* Modal selector de fecha */}
         <IonModal isOpen={dateModal} onDidDismiss={() => setDateModal(false)}>
           <IonHeader>
             <IonToolbar>
