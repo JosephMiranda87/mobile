@@ -7,9 +7,7 @@ const container = document.getElementById("root");
 const root = createRoot(container!);
 
 root.render(
-  <React.StrictMode>
     <FinanceProvider>
       <App />
     </FinanceProvider>
-  </React.StrictMode>
 );

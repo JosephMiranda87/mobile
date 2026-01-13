@@ -83,8 +83,8 @@ type FinanceState = {
 const FinanceContext = createContext<FinanceState | null>(null);
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+const [accounts, setAccounts] = useState<Account[]>([]);
+const [expenses, setExpenses] = useState<Expense[]>([]);
 
   useEffect(() => {
     try {
@@ -117,10 +117,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addToAccountBalance: FinanceState["addToAccountBalance"] = (accountId, amount) => {
-  setAccounts((prev) =>
-    prev.map((a) => (a.id === accountId ? { ...a, balance: a.balance + amount } : a))
-  );
-};
+    setAccounts((prev) =>
+      prev.map((a) => (a.id === accountId ? { ...a, balance: a.balance + amount } : a))
+    );
+  };
 
 
   const updateAccountBalance: FinanceState["updateAccountBalance"] = (accountId, balance) => {
@@ -139,13 +139,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addExpense: FinanceState["addExpense"] = (e) => {
+    const acc = accounts.find((a) => a.id === e.accountId);
+    if (!acc) return;
+    if (e.amount > acc.balance) return;
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-    // Descuenta del saldo de la cuenta
+    // Descuenta del saldo
     setAccounts((prev) =>
       prev.map((a) => (a.id === e.accountId ? { ...a, balance: a.balance - e.amount } : a))
     );
-
     setExpenses((prev) => [{ id, ...e }, ...prev]);
   };
 

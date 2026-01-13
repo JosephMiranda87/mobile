@@ -40,7 +40,9 @@ export default function ExpenseFormModal({
     const n = Number(amount);
     if (!Number.isFinite(n) || n <= 0) return;
     if (!accountId) return;
-
+    const acc = accounts.find((a) => a.id === accountId);
+    if (!acc) return
+    if (n > acc.balance) return;
     addExpense({
       amount: n,
       categoryId,
@@ -56,7 +58,12 @@ export default function ExpenseFormModal({
     onDidDismiss();
   }
 
+
   const selectedAcc = accounts.find((a) => a.id === accountId);
+  const available = selectedAcc?.balance ?? 0;
+  const amountN = Number(amount);
+  const amountValid = Number.isFinite(amountN) && amountN > 0;
+  const hasFunds = amountValid && amountN <= available;
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDidDismiss}>
@@ -109,13 +116,21 @@ export default function ExpenseFormModal({
             Saldo actual de la cuenta: <b>{money(selectedAcc.balance)}</b>
           </p>
         )}
+
+        {amountValid && !hasFunds && (
+          <p style={{ marginTop: 10, color: "var(--ion-color-danger)" }}>
+            El monto supera el saldo disponible ({money(available)}).
+          </p>
+        )}
+
       </IonContent>
 
       <IonFooter>
         <IonToolbar>
-          <IonButton expand="block" onClick={save}>
+          <IonButton expand="block" onClick={save} disabled={!amountValid || !hasFunds}>
             Guardar gasto
           </IonButton>
+
           <IonButton expand="block" fill="clear" onClick={onDidDismiss}>
             Cancelar
           </IonButton>

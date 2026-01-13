@@ -48,7 +48,7 @@ import "./Tab3.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-type BudgetScope = "all" | string; 
+type BudgetScope = "all" | string;
 
 function hexToRgba(hex: string, alpha: number) {
   const h = hex.replace("#", "");
@@ -263,20 +263,38 @@ const Tab3: React.FC = () => {
     accounts,
   ]);
 
+
+  const maxValue = useMemo(() => {
+    const all = [
+      ...primaryByCat.data,
+      ...(compareOn ? compByCat.data : []),
+    ];
+    return all.length ? Math.max(...all) : 0;
+  }, [primaryByCat.data, compByCat.data, compareOn]);
+
+  const chartHeight = useMemo(() => {
+    if (maxValue > 500) return 520;
+    if (maxValue > 200) return 460;
+    if (maxValue > 50) return 400;
+    return 320;
+  }, [maxValue]);
+
+
   const options = useMemo(
     () => ({
       responsive: true,
+      maintainAspectRatio: false, // ✅ clave
       plugins: {
         legend: { position: "bottom" as const },
         tooltip: { mode: "index" as const, intersect: false },
       },
       scales: {
-        x: { stacked: false },
         y: { beginAtZero: true },
       },
     }),
     []
   );
+
 
   return (
     <IonPage>
@@ -377,7 +395,9 @@ const Tab3: React.FC = () => {
                   <p style={{ margin: 0 }}>No hay gastos en este período.</p>
                 </IonText>
               ) : (
-                <Bar data={chartData} options={options} />
+                <div style={{ height: chartHeight }}>
+                  <Bar data={chartData} options={options} />
+                </div>
               )}
             </IonCardContent>
           </IonCard>
