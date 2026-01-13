@@ -75,7 +75,7 @@ type FinanceState = {
   updateAccountBalance: (accountId: string, balance: number) => void;
   deleteAccount: (accountId: string) => void;
   updateAccount: (accountId: string, patch: { bankId: BankId; name: string; balance: number }) => void;
-
+  addToAccountBalance: (accountId: string, amount: number) => void;
   addExpense: (e: Omit<Expense, "id">) => void;
   deleteExpense: (expenseId: string) => void;
 };
@@ -115,6 +115,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     setAccounts((prev) => [...prev, { id, ...a }]);
   };
+
+  const addToAccountBalance: FinanceState["addToAccountBalance"] = (accountId, amount) => {
+  setAccounts((prev) =>
+    prev.map((a) => (a.id === accountId ? { ...a, balance: a.balance + amount } : a))
+  );
+};
+
 
   const updateAccountBalance: FinanceState["updateAccountBalance"] = (accountId, balance) => {
     setAccounts((prev) => prev.map((x) => (x.id === accountId ? { ...x, balance } : x)));
@@ -170,6 +177,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       deleteAccount,
       addExpense,
       deleteExpense,
+      addToAccountBalance,
     }),
     [accounts, expenses]
   );
